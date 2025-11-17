@@ -1308,8 +1308,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{
 			break;
 		}
-		else
-		{
 			
 			//数字の0キーが押されていたら
 			if (input->PushKey(DIK_0))
@@ -1475,7 +1473,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 			assert(SUCCEEDED(hr));
 			hr = commandList->Reset(commandAllocator, nullptr);
 			assert(SUCCEEDED(hr));
-		}
 
 
 #ifdef _DEBUG
