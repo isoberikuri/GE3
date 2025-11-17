@@ -17,9 +17,13 @@
 #include "externals/DirectXTex/DirectXTex.h"
 #include<fstream>
 #include<sstream>
+#include "Input.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
 
+#pragma comment(lib,"dinput8.lib")
 
 struct Vector4
 {
@@ -52,7 +56,8 @@ struct Matrix4x4
 	float m[4][4];
 };
 
-struct Transform {
+struct Transform
+{
 	Vector3 scale;
 	Vector3 rotate;
 	Vector3 translate;
@@ -787,6 +792,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	RegisterClass(&wc);
 
 
+
 	//クライアント領域のサイズ
 	const int32_t kClientWidth = 1280;
 	const int32_t kClientHeight = 720;
@@ -896,6 +902,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	assert(SUCCEEDED(hr));
 	//コマンドリストを生成する
 	ID3D12GraphicsCommandList* commandList = nullptr;
+
+
 	hr = device->CreateCommandList
 	(0, D3D12_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr, IID_PPV_ARGS(&commandList));
 	//コマンドリストの生成がうまくいかなかったので起動できない
@@ -1129,6 +1137,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
+	//asd
 
 
 	//三角形２個
@@ -1171,6 +1180,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexData[5].texcoord = { 1.0f,1.0f };
 
 	*/
+
+	//ポインタ
+	Input* input = nullptr;
+	//入力の初期化
+	input = new Input();
+	input->Initialize(wc.hInstance, hwnd);
+	//入力の更新
+	input->Update();
+	//入力解放
+	delete input;
 
 	//モデル読み込み
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
@@ -1343,9 +1362,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
 	indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
 
+	BYTE key[256]{};
+	BYTE prekey[256]{};
 
 	//------------------------------------------------------------------------------------------------------------------------------
 
+	//メインループ
 	MSG msg{};
 	//ウィンドウの×ボタンが押されるまでループ
 	while (msg.message != WM_QUIT)
@@ -1355,8 +1377,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
-		} else
+		}
+		else
 		{
+			
+			//数字の0キーが押されていたら
+			if (input->PushKey(DIK_0))
+			{
+				OutputDebugStringA("Hit 0\n");
+			}
+
 			//ゲームの処理
 
 			//Sprite用のWorldViewProjectionMatrixを作る
@@ -1615,6 +1645,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 
 	CoUninitialize();
+
+	
 
 	return 0;
 }
