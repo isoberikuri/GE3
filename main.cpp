@@ -1188,8 +1188,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	input->Initialize(wc.hInstance, hwnd);
 	//入力の更新
 	input->Update();
-	//入力解放
-	delete input;
 
 	//モデル読み込み
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
@@ -1626,6 +1624,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	device->Release();
 	useAdapter->Release();
 	dxgiFactory->Release();
+	//入力解放
+	delete input;
+
 #ifdef _DEBUG
 	debugController->Release();
 #endif
@@ -1645,8 +1646,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	}
 
 	CoUninitialize();
-
-	
 
 	return 0;
 }
