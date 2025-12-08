@@ -19,6 +19,7 @@
 #include<sstream>
 #include "Input.h"
 #include "WinApp.h"
+#include "DirectXCommon.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define DIRECTINPUT_VERSION 0x0800
@@ -344,6 +345,9 @@ Matrix4x4 MakeOrthographicMatrix(float left, float top, float right, float botto
 }
 
 
+//=========================================//
+//           深度ステンシルビュー          //↓↓↓始まり↓↓↓
+//=========================================//
 
 //DescriptorHeapの作成関数
 ID3D12DescriptorHeap* CreateDescriptorHeap(
@@ -359,6 +363,10 @@ ID3D12DescriptorHeap* CreateDescriptorHeap(
 	return descriptorHeap;
 
 }
+
+//=========================================//
+//           深度ステンシルビュー          //↑↑↑終わり↑↑↑
+//=========================================//
 
 std::wstring ConvertString(const std::string& str)
 {
@@ -757,6 +765,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	winApp = new WinApp();
 	winApp->Initialize();
 
+	//ポインタ
+	DirectXCommon* dxCommon = nullptr;
+	//DirectXの初期化
+	dxCommon = new DirectXCommon();
+	dxCommon->Initialize();
+
 #ifdef _DEBUG
 	ID3D12Debug1* debugController = nullptr;
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController)))) {
@@ -797,6 +811,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//適切なアダプタが見つからなかったので起動できない
 	assert(useAdapter != nullptr);
 
+
+	//=========================================//
+	//          デバイス(ID3D12Device)         //↓↓↓始まり↓↓↓
+	//=========================================//
+	
 	ID3D12Device* device = nullptr;
 	//機能レベルとログ出力用の文字列
 	D3D_FEATURE_LEVEL featureLevels[] =
@@ -822,6 +841,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 
 	Log("Complete create D3D12Device!!!\n");
 
+	//=========================================//
+	//          デバイス(ID3D12Device)         //↑↑↑終わり↑↑↑
+	//=========================================//
+	
+	
+	//=========================================//
+	//              コマンド関連               //↓↓↓始まり↓↓↓
+	//=========================================//
+	
 	// コマンドキューを生成する
 	ID3D12CommandQueue* commandQueue = nullptr;
 	D3D12_COMMAND_QUEUE_DESC commandQueueDesc{};
@@ -843,6 +871,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//コマンドリストの生成がうまくいかなかったので起動できない
 	assert(SUCCEEDED(hr));
 
+	//=========================================//
+	//              コマンド関連               //↑↑↑終わり↑↑↑
+	//=========================================//
+
+
+	//=========================================//
+	//            スワップチェーン             //↓↓↓始まり↓↓↓
+	//=========================================//
+	
 	//スワップチェーンを生成する
 	IDXGISwapChain4* swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
@@ -861,21 +898,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	);
 	assert(SUCCEEDED(hr));
 
-	////ディスクリプタヒープの生成
-	//ID3D12DescriptorHeap* rtvDescriptorHeap = nullptr;
-	//D3D12_DESCRIPTOR_HEAP_DESC rtvDesctiptorHeapDesc{};
-	//rtvDesctiptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-	//rtvDesctiptorHeapDesc.NumDescriptors = 2;
-	//hr = device->CreateDescriptorHeap(&rtvDesctiptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap));
-	////ディスクリプタヒープが作れなかったので起動できない
-	//assert(SUCCEEDED(hr));
+	//=========================================//
+	//            スワップチェーン             //↑↑↑終わり↑↑↑
+	//=========================================//
 
+
+	//=========================================//
+	//         各種デスクリプタヒープ          //↓↓↓始まり↓↓↓
+	//=========================================//
+	
 	//RTV用のヒープでデイスクリプタの数は２。RTVはShader内で触るものではないので、ShaderVisibleはfasle
 	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 
 	//SRV用のヒープでデイスクリプタの数は128。SRVはShader内で触るものなので、ShaderVIsibleはture
 	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
+	//=========================================//
+	//         各種デスクリプタヒープ          //↑↑↑終わり↑↑↑
+	//=========================================//
+
+
+	//=========================================//
+	//         レンダーターゲットビュー        //↓↓↓始まり↓↓↓
+	//=========================================//
 
 	//SwapChainからResourceを引っ張ってくる
 	ID3D12Resource* swapChainResources[2] = { nullptr };
@@ -903,6 +948,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//2つ目を作る
 	device->CreateRenderTargetView(swapChainResources[1], &rtvDesc, rtvHandles[1]);
 
+	//=========================================//
+	//         レンダーターゲットビュー        //↑↑↑終わり↑↑↑
+	//=========================================//
+
+
+	//=========================================//
+	//                 フェンス                //↓↓↓始まり↓↓↓
+	//=========================================//
+
 	// 初期化θでFenceを作る
 	ID3D12Fence* fence = nullptr;
 	uint64_t fenceValue = 0;
@@ -913,6 +967,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	// FenceのSignalを待つためのイベントを作成する
 	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	assert(fenceEvent != nullptr);
+
+	//=========================================//
+	//                 フェンス                //↑↑↑終わり↑↑↑
+	//=========================================//
+
+
+	//=========================================//
+	//              DXCコンパイラ              //↓↓↓始まり↓↓↓
+	//=========================================//
 
 	//dxcCompilerを初期化
 	IDxcUtils* dxcUtils = nullptr;
@@ -926,6 +989,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	IDxcIncludeHandler* includeHandler = nullptr;
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	assert(SUCCEEDED(hr));
+
+	//=========================================//
+	//              DXCコンパイラ              //↑↑↑終わり↑↑↑
+	//=========================================//
+
 
 
 	//RootSignature作成
@@ -1071,50 +1139,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
-	//asd
-
-
-	//三角形２個
-	/*
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
-
-	//頂点バッファビューを作成する
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
-	//リソースの先頭のアドレスから使う
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
-	//使用するリソースのサイズは頂点３つ分のサイズ
-	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
-	//１頂点あたりのサイズ
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
-
-
-
-	//頂点リソースにデータを書き込む
-	VertexData* vertexData = nullptr;
-	//書き込むためのアドレスを取得
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	//左下
-	vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };
-	vertexData[0].texcoord = { 0.0f,1.0f };
-	//上
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	vertexData[1].texcoord = { 0.5f,0.0f };
-	//右下
-	vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };
-	vertexData[2].texcoord = { 1.0f,1.0f };
-
-	//左下
-	vertexData[3].position = { -0.5f,-0.5f,0.5,1.0f };
-	vertexData[3].texcoord = { 0.0f,1.0f };
-	//上
-	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
-	vertexData[4].texcoord = { 0.5f,0.0f };
-	//右下
-	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
-	vertexData[5].texcoord = { 1.0f,1.0f };
-
-	*/
-
 	//ポインタ
 	Input* input = nullptr;
 	//入力の初期化
@@ -1141,6 +1165,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));//書き込むためのアドレスを取得
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
 
+
+	//=========================================//
+	//               ビューポート              //↓↓↓始まり↓↓↓
+	//=========================================//
+
 	//ビューボート
 	D3D12_VIEWPORT viewport{};
 	//クライアント領域のサイズと一緒にして画面全体に表示
@@ -1151,6 +1180,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 
+	//=========================================//
+	//               ビューポート              //↑↑↑終わり↑↑↑
+	//=========================================//
+
+
+	//=========================================//
+	//              シザリング矩形             //↓↓↓始まり↓↓↓
+	//=========================================//
+	
 	//シザー矩形
 	D3D12_RECT scissorRect{};
 	//基本的にビューボートと同じ矩形が構成されるようにする
@@ -1159,9 +1197,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	scissorRect.top = 0;
 	scissorRect.bottom = WinApp::kClientHeight;
 
-
-
-
+	//=========================================//
+	//              シザリング矩形             //↑↑↑終わり↑↑↑
+	//=========================================//
 
 
 	//マテリアル用のリソースを作る。今回はcolor１つ分のサイズを用意する
@@ -1188,6 +1226,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		{1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f} };
 
 
+	//=========================================//
+	//                  ImGui                  //↓↓↓始まり↓↓↓
+	//=========================================//
+
 	//ImGuiの初期化。詳細はさして重要ではないので解説は省略する。
 	//こういうもんである
 	IMGUI_CHECKVERSION();
@@ -1200,6 +1242,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 		srvDescriptorHeap,
 		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
+
+	//=========================================//
+	//                  ImGui                  //↑↑↑終わり↑↑↑
+	//=========================================//
 
 	//Textueを読んで転送する
 	//DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
@@ -1224,6 +1270,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//SRVの生成
 	device->CreateShaderResourceView(textureResource, &srvDesc, textureSrvHandleCPU);
 
+	//=========================================//
+	//              深度バッファ               //↓↓↓始まり↓↓↓
+	//=========================================//
+
 	//DepthStencilTextureをウィンドウのサイズで作成
 	ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, WinApp::kClientWidth, WinApp::kClientHeight);
 
@@ -1236,6 +1286,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	//DSVHeapの先頭にDSVをつくる
 	device->CreateDepthStencilView(depthStencilResource, &dsvDesc, dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+
+	//=========================================//
+	//              深度バッファ               //↑↑↑終わり↑↑↑
+	//=========================================//
 
 	//Sprite用の頂点リソースを作る
 	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
@@ -1563,6 +1617,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	//WindowsAPI解放
 	delete winApp;
 	winApp = nullptr;
+
+	//DirectX解放
+	delete dxCommon;
 
 #ifdef _DEBUG
 	debugController->Release();
