@@ -13,6 +13,7 @@
 #include "externals/imgui/imgui.h"
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
+#include <thread>
 
 
 
@@ -148,5 +149,19 @@ private://メンバ変数
 	//WindowsAPI
 	WinApp* winApp = nullptr;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, 2> rtvHandles{};
+
+	//================================//
+    //              60fps             //
+    //================================//
+
+    //FPS固定初期化
+	void InitializeFixFPS();
+
+	//FPS固定更新
+	void UpdateFixFPS();
+
+	//記録時間(FPS固定用)
+	std::chrono::steady_clock::time_point reference_;
+
 
 };
