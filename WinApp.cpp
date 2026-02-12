@@ -4,6 +4,7 @@
 #include "externals/imgui/imgui.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM, LPARAM);
 
+#pragma comment(lib,"winmm.lib")
 //#pragma comment(lib, "dinput8.lib")
 //#pragma comment(lib, "dxguid.lib")
 
@@ -72,6 +73,10 @@ void WinApp::Initialize()
 
 	//ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
+
+	//Systemタイマーの分解能を上げる
+	timeBeginPeriod(1);
+
 }
 
 void WinApp::Update()

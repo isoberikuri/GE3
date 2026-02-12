@@ -19,8 +19,8 @@
 class DirectXCommon
 {
 public:
-    // 初期化処理
-    void Initialize(WinApp* winApp);
+	// 初期化処理
+	void Initialize(WinApp* winApp);
 
 	//=========================================//
 	//          デバイス(ID3D12Device)         //
@@ -91,7 +91,7 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12Device> device;
 
 private://メンバ変数
-    
+
 	//=========================================//
 	//          デバイス(ID3D12Device)         //
 	//=========================================//
