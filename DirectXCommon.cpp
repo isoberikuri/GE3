@@ -4,6 +4,13 @@
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+#include "externals/imgui/imgui.h"
+#include "externals/imgui/imgui_impl_dx12.h"
+#include "externals/imgui/imgui_impl_win32.h"
+
+#include"WinApp.h"
+#include "StringUtility.h"
+using namespace StringUtility;
 using namespace Microsoft::WRL;
 
 void DirectXCommon::Initialize(WinApp* winApp)
@@ -94,7 +101,7 @@ void DirectXCommon::CreateDevice()
 		//ソフトウェアアダプタでなければ採用！
 		if (!(adapterDesc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
 		{
-			Logger::Log(StringUtility::ConvertString(std::format(L"Use Adapater:{}\n", adapterDesc.Description)));
+			//Logger::Log(StringUtility::ConvertString(std::format(L"Use Adapater:{}\n", adapterDesc.Description)));
 			break;
 		}
 		useAdapter = nullptr;
@@ -117,14 +124,14 @@ void DirectXCommon::CreateDevice()
 		if (SUCCEEDED(hr))
 		{
 			//生成できたのでログ出力を行ってループを抜ける
-			Logger::Log(std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
+			//Logger::Log(std::format("FeatureLevel : {}\n", featureLevelStrings[i]));
 			break;
 		}
 	}
 	//デバイスの生成がうまくいかなかったので起動できない
 	assert(device != nullptr);
 
-	Logger::Log("Complete create D3D12Device!!!\n");
+	//Logger::Log("Complete create D3D12Device!!!\n");
 }
 
 //=========================================//
@@ -665,7 +672,7 @@ DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profil
 	hr = dxcUtils->CreateDefaultIncludeHandler(includeHandler.GetAddressOf());
 	assert(SUCCEEDED(hr));
 
-	Logger::Log(StringUtility::ConvertString(std::format(L"Begin CompliteShader,path:{},profile:{}\n", filePath, profile)));
+	//Logger::Log(StringUtility::ConvertString(std::format(L"Begin CompliteShader,path:{},profile:{}\n", filePath, profile)));
 	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
 	hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
 	assert(SUCCEEDED(hr));
@@ -699,7 +706,7 @@ DirectXCommon::CompileShader(const std::wstring& filePath, const wchar_t* profil
 
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	assert(SUCCEEDED(hr));
-	Logger::Log(StringUtility::ConvertString(std::format(L"Compile Succeded, path:{}, profile:{}\n", filePath, profile)));
+	//Logger::Log(StringUtility::ConvertString(std::format(L"Compile Succeded, path:{}, profile:{}\n", filePath, profile)));
 	
 	return shaderBlob;
 }
